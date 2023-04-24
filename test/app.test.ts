@@ -4,6 +4,7 @@ import type { Server } from "http"
 import type { AddressInfo } from "net"
 
 import app from "../src/app"
+import { afterEach } from "node:test"
 
 describe("app tests", () => {
   let server: Server;
@@ -18,6 +19,14 @@ describe("app tests", () => {
   afterAll(() => {
     server.close()
   });
+
+  afterEach(async () => {
+    await axios({
+      method: 'get',
+      url: `${baseUrl}/reset`,
+    })
+  });
+
   test("/oauth/v1/token POST", async () => {
     const response = await axios({
       method: 'post',

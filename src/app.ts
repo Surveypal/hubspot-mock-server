@@ -202,4 +202,16 @@ app.get("/ping", (req, res) => {
   res.send("pong")
 })
 
+app.get("/reset", (req, res) => {
+  data.contacts.list.length = 0
+  data.contacts.set.clear()
+  data.companies.list.length = 0
+  data.companies.set.clear()
+  data.deals.list.length = 0
+  data.deals.set.clear()
+  data.tickets.list.length = 0
+  data.tickets.set.clear()
+  res.status(200)
+})
+
 export default app
