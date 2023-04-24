@@ -133,17 +133,51 @@ app.post("/crm/v3/objects/:resource", async (req, res) => {
   res.send(resource)
 })
 
-app.get("/crm/v3/objects/:resource/:resource_id", async (req, res) => {
-  if (!data[req.params.resource as DataKey].set.has(parseInt(req.params.resource_id))) {
-    res.type("html")
-    res.status(404)
-    res.send()
-  } else {
-    res.type("json")
-    res.status(200)
-    res.send(data[req.params.resource as DataKey].set.get(parseInt(req.params.resource_id)))
+app.get(
+  "/crm/v3/objects/:resource/:resource_id",
+  async (
+    req: Request<
+      { resource: string; resource_id: string },
+      unknown,
+      unknown,
+      { associations?: string }
+    >,
+    res
+  ) => {
+    const associations = req.query.associations
+    if (!data[req.params.resource as DataKey].set.has(parseInt(req.params.resource_id))) {
+      res.type("html")
+      res.status(404)
+      res.send()
+    } else {
+      const result = data[req.params.resource as DataKey].set.get(parseInt(req.params.resource_id))
+      if (associations !== undefined) {
+        for (const association of associations.split(",")) {
+          console.log(association)
+
+          const related: Association[] = result[pluralize(association)] ?? []
+          if (related.length > 0) {
+            if (result.associations === undefined) {
+              result.associations = {}
+            }
+            result.associations[pluralize(association)] = {
+              results: related.map(item => {
+                return {
+                  id: item.toObjectId,
+                  type: item.associationTypes[0].associationCategory,
+                }
+              })
+            }
+          }
+        }
+      }
+
+      res.type("json")
+      res.status(200)
+      res.send(result)
+    }
   }
-})
+)
 
 app.patch("/crm/v3/objects/:resource/:resource_id", async (req, res) => {
   const resourceName = getResourceName(req.params.resource)
@@ -221,18 +255,15 @@ app.put(
 
 app.post("/crm/v3/objects/:resource/search", async (req, res) => {
   const filters = req.body as Filters
-  console.log(filters)
 
   const results: object[] = []
 
   const entities = data[req.params.resource as DataKey].set.values()
   for (const entity of entities) {
-    console.log(entity)
     let add = false
     for (const filterGroup of filters.filterGroups) {
       let group = true
       for (const filter of filterGroup.filters) {
-        console.log(filter)
         if (filter.operator === "EQ") {
           if (entity.properties[filter.propertyName] !== filter.value) {
             group = false

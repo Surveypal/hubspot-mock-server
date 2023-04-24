@@ -2,25 +2,25 @@ import axios from "axios"
 import { describe, expect, test, beforeAll, afterAll, afterEach } from "@jest/globals"
 import type { Server } from "http"
 import type { AddressInfo } from "net"
-import { Client } from "@hubspot/api-client";
+import { Client } from "@hubspot/api-client"
 
 import app from "../src/app"
 
 describe("app tests", () => {
-  let server: Server;
-  let baseUrl: string;
-  let hubspotClient: Client;
+  let server: Server
+  let baseUrl: string
+  let hubspotClient: Client
 
   beforeAll(() => {
-    server = app.listen(0);
-    const port = (server.address() as AddressInfo).port;
-    console.log('App listening on port', port);
+    server = app.listen(0)
+    const port = (server.address() as AddressInfo).port
+    console.log("App listening on port", port)
     baseUrl = `http://localhost:${port}`
 
     hubspotClient = new Client({
-      accessToken: 'accessToken',
+      accessToken: "accessToken",
       basePath: baseUrl,
-    });
+    })
   })
   afterAll(() => {
     server.close()
@@ -28,14 +28,14 @@ describe("app tests", () => {
 
   afterEach(async () => {
     await axios({
-      method: 'get',
+      method: "get",
       url: `${baseUrl}/reset`,
     })
   })
 
   test("/oauth/v1/token POST", async () => {
     const response = await axios({
-      method: 'post',
+      method: "post",
       url: `${baseUrl}/oauth/v1/token`,
     })
 
@@ -43,26 +43,26 @@ describe("app tests", () => {
   })
 
   test("Get all companies when no present", async () => {
-    const response = await hubspotClient.crm.companies.basicApi.getPage();
+    const response = await hubspotClient.crm.companies.basicApi.getPage()
     expect(response.results).toStrictEqual([])
   })
 
   test("Get all companies when multiple present", async () => {
     const createResponse1 = await hubspotClient.crm.companies.basicApi.create({
       properties: {
-        name: "Test company 1"
-      }
+        name: "Test company 1",
+      },
     })
     expect(createResponse1).toBeDefined()
 
     const createResponse2 = await hubspotClient.crm.companies.basicApi.create({
       properties: {
-        name: "Test company 2"
-      }
+        name: "Test company 2",
+      },
     })
     expect(createResponse2).toBeDefined()
 
-    const response = await hubspotClient.crm.companies.basicApi.getPage();
+    const response = await hubspotClient.crm.companies.basicApi.getPage()
     expect(response).toBeDefined()
     expect(response.results).toHaveLength(2)
 
@@ -78,8 +78,8 @@ describe("app tests", () => {
 
     const createResponse = await hubspotClient.crm.companies.basicApi.create({
       properties: {
-        name
-      }
+        name,
+      },
     })
     expect(createResponse).toBeDefined()
     expect(createResponse.id).toBeDefined()
@@ -98,35 +98,37 @@ describe("app tests", () => {
   })
 
   test("Reading company not present", async () => {
-    await expect(async () => await hubspotClient.crm.companies.basicApi.getById("42")).rejects.toThrow()
+    await expect(
+      async () => await hubspotClient.crm.companies.basicApi.getById("42")
+    ).rejects.toThrow()
   })
 
   test("Creating multiple companies assigns different ids to them", async () => {
     const createResponse1 = await hubspotClient.crm.companies.basicApi.create({
       properties: {
-        name: "Test company 1"
-      }
+        name: "Test company 1",
+      },
     })
     const createResponse2 = await hubspotClient.crm.companies.basicApi.create({
       properties: {
-        name: "Test company 2"
-      }
+        name: "Test company 2",
+      },
     })
     expect(createResponse1.id).not.toBe(createResponse2.id)
-  });
+  })
 
   test("Create company/contact association", async () => {
     const createCompanyResponse = await hubspotClient.crm.companies.basicApi.create({
       properties: {
-        name: "Test company 1"
-      }
+        name: "Test company 1",
+      },
     })
     const createContactResponse = await hubspotClient.crm.contacts.basicApi.create({
       properties: {
         firstname: "Teppo",
         lastname: "Testaaja",
         email: "teppo@testaaja.fi",
-      }
+      },
     })
 
     const associationResponse = await hubspotClient.crm.contacts.associationsApi.create(
@@ -137,7 +139,7 @@ describe("app tests", () => {
         {
           associationCategory: "HUBSPOT_DEFINED",
           associationTypeId: 1,
-        }
+        },
       ]
     )
     expect(associationResponse).toBeDefined()
@@ -146,7 +148,10 @@ describe("app tests", () => {
     expect(associationResponse.toObjectTypeId).toBe("company")
     expect(associationResponse.toObjectId).toBe(createCompanyResponse.id)
 
-    const getResponse = await hubspotClient.crm.contacts.associationsApi.getAll(parseInt(createContactResponse.id), "company")
+    const getResponse = await hubspotClient.crm.contacts.associationsApi.getAll(
+      parseInt(createContactResponse.id),
+      "company"
+    )
     expect(getResponse.results).toBeDefined()
     expect(getResponse.results).toHaveLength(1)
     const association = getResponse.results[0]
@@ -154,7 +159,19 @@ describe("app tests", () => {
     expect(association.associationTypes).toHaveLength(1)
     expect(association.associationTypes[0].category).toBe("HUBSPOT_DEFINED")
     expect(association.associationTypes[0].typeId).toBe(1)
-  });
+
+    const getContactResponse = await hubspotClient.crm.contacts.basicApi.getById(
+      createContactResponse.id,
+      undefined,
+      undefined,
+      ["company"],
+      undefined
+    )
+    expect(getContactResponse.associations).toBeDefined()
+    expect(getContactResponse.associations?.companies).toBeDefined()
+    expect(getContactResponse.associations?.companies?.results).toHaveLength(1)
+    expect(getContactResponse.associations?.companies?.results[0].id).toBe(createCompanyResponse.id)
+  })
 
   test("Updating company", async () => {
     const name = "Test company 1"
@@ -162,8 +179,8 @@ describe("app tests", () => {
 
     const createResponse = await hubspotClient.crm.companies.basicApi.create({
       properties: {
-        name
-      }
+        name,
+      },
     })
     expect(createResponse).toBeDefined()
     expect(createResponse.id).toBeDefined()
@@ -172,14 +189,11 @@ describe("app tests", () => {
     expect(createResponse.updatedAt).toBeDefined()
     expect(createResponse.archived).toBe(false)
 
-    const updateResponse = await hubspotClient.crm.companies.basicApi.update(
-      createResponse.id,
-      {
-        properties: {
-          extra_data: extraData,
-        },
-      }
-    )
+    const updateResponse = await hubspotClient.crm.companies.basicApi.update(createResponse.id, {
+      properties: {
+        extra_data: extraData,
+      },
+    })
     expect(updateResponse.properties.name).toBe(name)
     expect(updateResponse.properties.extra_data).toBe(extraData)
 
@@ -202,14 +216,14 @@ describe("app tests", () => {
               propertyName: "name",
               operator: "EQ",
               value: "Company name",
-            }
-          ]
-        }
-      ]
+            },
+          ],
+        },
+      ],
     }
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
     // @ts-ignore
-    const response = await hubspotClient.crm.companies.searchApi.doSearch(filters);
+    const response = await hubspotClient.crm.companies.searchApi.doSearch(filters)
     expect(response.total).toBe(0)
     expect(response.results).toStrictEqual([])
   })
@@ -219,8 +233,8 @@ describe("app tests", () => {
 
     const createResponse = await hubspotClient.crm.companies.basicApi.create({
       properties: {
-        name
-      }
+        name,
+      },
     })
     expect(createResponse).toBeDefined()
     expect(createResponse.id).toBeDefined()
@@ -233,15 +247,14 @@ describe("app tests", () => {
               propertyName: "name",
               operator: "EQ",
               value: name,
-            }
-          ]
-        }
-      ]
+            },
+          ],
+        },
+      ],
     }
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
     // @ts-ignore
-    const response = await hubspotClient.crm.companies.searchApi.doSearch(filters);
-    console.log(response)
+    const response = await hubspotClient.crm.companies.searchApi.doSearch(filters)
     expect(response.total).toBe(1)
     expect(response.results).toHaveLength(1)
     expect(response.results[0].id).toBe(createResponse.id)
