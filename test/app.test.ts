@@ -156,6 +156,42 @@ describe("app tests", () => {
     expect(association.associationTypes[0].typeId).toBe(1)
   });
 
+  test("Updating company", async () => {
+    const name = "Test company 1"
+    const extraData = "Some extra data"
+
+    const createResponse = await hubspotClient.crm.companies.basicApi.create({
+      properties: {
+        name
+      }
+    })
+    expect(createResponse).toBeDefined()
+    expect(createResponse.id).toBeDefined()
+    expect(createResponse.properties.name).toBe(name)
+    expect(createResponse.createdAt).toBeDefined()
+    expect(createResponse.updatedAt).toBeDefined()
+    expect(createResponse.archived).toBe(false)
+
+    const updateResponse = await hubspotClient.crm.companies.basicApi.update(
+      createResponse.id,
+      {
+        properties: {
+          extra_data: extraData,
+        },
+      }
+    )
+    expect(updateResponse.properties.name).toBe(name)
+    expect(updateResponse.properties.extra_data).toBe(extraData)
+
+    const getResponse = await hubspotClient.crm.companies.basicApi.getById(createResponse.id)
+    expect(getResponse).toBeDefined()
+    expect(getResponse.id).toBeDefined()
+    expect(getResponse.properties.name).toBe(name)
+    expect(getResponse.properties.extra_data).toBe(extraData)
+    expect(getResponse.createdAt).toBeDefined()
+    expect(getResponse.updatedAt).toBeDefined()
+    expect(getResponse.archived).toBe(false)
+  })
 /*
   test("Real hubspot", async () => {
     const realClient = new Client({ accessToken: process.env.HUBSPOT_API_KEY });
