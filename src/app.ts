@@ -13,17 +13,19 @@ app.use(bodyParser.json())
 
 const webhook = {
   send: async (events: any[]) => {
-    events = events.map((ev) => {
-      return {
-        ...ev,
-        appId: config.custom.app_id,
-      }
-    })
-    await axios({
-      method: "post",
-      url: config.webhook.url,
-      data: events,
-    })
+    if (config.webhook.url !== undefined) {
+      events = events.map((ev) => {
+        return {
+          ...ev,
+          appId: config.custom.app_id,
+        }
+      })
+      await axios({
+        method: "post",
+        url: config.webhook.url,
+        data: events,
+      })
+    }
   },
 }
 
@@ -50,7 +52,7 @@ type DataKey = keyof typeof data
 
 const newId = (resourceName: string): number => {
   const list = data[resourceName as DataKey].list
-  return list.length === 0 ? list[list.length - 1] : 1
+  return list.length !== 0 ? list[list.length - 1] + 1 : 1
 }
 
 const getResourceName = (resources: string): string => {
@@ -66,6 +68,17 @@ const getResourceName = (resources: string): string => {
   }
   throw new Error("NotImplemented")
 }
+
+app.get("/crm/v3/objects/:resource", async (req, res) => {
+  const resource = data[req.params.resource as DataKey]
+  const response = {
+    results: [...resource.set.values()],
+  };
+
+  res.type("json")
+  res.status(200)
+  res.send(response)
+});
 
 app.post("/crm/v3/objects/:resource", async (req, res) => {
   const id = newId(req.params.resource)
@@ -92,9 +105,15 @@ app.post("/crm/v3/objects/:resource", async (req, res) => {
 })
 
 app.get("/crm/v3/objects/:resource/:resource_id", async (req, res) => {
-  res.type("json")
-  res.status(200)
-  res.send(data[req.params.resource as DataKey].set.get(parseInt(req.params.resource_id)))
+  if (!data[req.params.resource as DataKey].set.has(parseInt(req.params.resource_id))) {
+    res.type("html")
+    res.status(404)
+    res.send()
+  } else {
+    res.type("json")
+    res.status(200)
+    res.send(data[req.params.resource as DataKey].set.get(parseInt(req.params.resource_id)))
+    }
 })
 
 app.patch("/crm/v3/objects/:resource/:resource_id", async (req, res) => {
@@ -211,7 +230,9 @@ app.get("/reset", (req, res) => {
   data.deals.set.clear()
   data.tickets.list.length = 0
   data.tickets.set.clear()
+
   res.status(200)
+  res.send()
 })
 
 export default app

@@ -21,6 +21,7 @@
     "@babel/core": "^7.21.4",
     "@babel/preset-env": "^7.21.4",
     "@babel/preset-typescript": "^7.21.4",
+    "@hubspot/api-client": "^8.9.0",
     "@types/express": "^4.17.17",
     "@types/node": "^18.15.13",
     "@types/pluralize": "^0.0.29",
