@@ -79,9 +79,17 @@ const data = {
 
 type DataKey = keyof typeof data
 
+const newIds = {
+  contacts: 1,
+  companies: 1,
+  deals: 1,
+  tickets: 1,
+}
+
+type KeyKey = keyof typeof newIds
+
 const newId = (resourceName: string): number => {
-  const list = data[resourceName as DataKey].list
-  return list.length !== 0 ? list[list.length - 1] + 1 : 1
+  return newIds[resourceName as KeyKey]++
 }
 
 const getResourceName = (resources: string): string => {
