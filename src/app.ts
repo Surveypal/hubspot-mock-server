@@ -22,6 +22,20 @@ class Association {
   }
 }
 
+interface Filter {
+  readonly propertyName: string
+  readonly operator: string
+  readonly value: string
+}
+
+interface FilterGroup {
+  readonly filters: Filter[]
+}
+
+interface Filters {
+  readonly filterGroups: FilterGroup[]
+}
+
 const app: Express = express()
 
 app.use(bodyParser.json())
@@ -204,6 +218,42 @@ app.put(
     })
   }
 )
+
+app.post("/crm/v3/objects/:resource/search", async (req, res) => {
+  const filters = req.body as Filters
+  console.log(filters)
+
+  const results: object[] = []
+
+  const entities = data[req.params.resource as DataKey].set.values()
+  for (const entity of entities) {
+    console.log(entity)
+    let add = false
+    for (const filterGroup of filters.filterGroups) {
+      let group = true
+      for (const filter of filterGroup.filters) {
+        console.log(filter)
+        if (filter.operator === "EQ") {
+          if (entity.properties[filter.propertyName] !== filter.value) {
+            group = false
+          }
+        }
+      }
+      add = add || group
+    }
+    if (add) {
+      results.push(entity)
+    }
+  }
+
+  res.type("json")
+  res.status(200)
+  res.send({
+    total: results.length,
+    results,
+    paging: [],
+  })
+})
 
 app.post("/oauth/v1/token", (req, res) => {
   res.type("json")

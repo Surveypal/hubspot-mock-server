@@ -192,7 +192,63 @@ describe("app tests", () => {
     expect(getResponse.updatedAt).toBeDefined()
     expect(getResponse.archived).toBe(false)
   })
-/*
+
+  test("Search company without results", async () => {
+    const filters = {
+      filterGroups: [
+        {
+          filters: [
+            {
+              propertyName: "name",
+              operator: "EQ",
+              value: "Company name",
+            }
+          ]
+        }
+      ]
+    }
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
+    // @ts-ignore
+    const response = await hubspotClient.crm.companies.searchApi.doSearch(filters);
+    expect(response.total).toBe(0)
+    expect(response.results).toStrictEqual([])
+  })
+
+  test("Search company with results", async () => {
+    const name = "Test company 1"
+
+    const createResponse = await hubspotClient.crm.companies.basicApi.create({
+      properties: {
+        name
+      }
+    })
+    expect(createResponse).toBeDefined()
+    expect(createResponse.id).toBeDefined()
+
+    const filters = {
+      filterGroups: [
+        {
+          filters: [
+            {
+              propertyName: "name",
+              operator: "EQ",
+              value: name,
+            }
+          ]
+        }
+      ]
+    }
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
+    // @ts-ignore
+    const response = await hubspotClient.crm.companies.searchApi.doSearch(filters);
+    console.log(response)
+    expect(response.total).toBe(1)
+    expect(response.results).toHaveLength(1)
+    expect(response.results[0].id).toBe(createResponse.id)
+    expect(response.results[0].properties.name).toBe(name)
+  })
+
+  /*
   test("Real hubspot", async () => {
     const realClient = new Client({ accessToken: process.env.HUBSPOT_API_KEY });
     const getResponse = await realClient.crm.companies.basicApi.getPage()
