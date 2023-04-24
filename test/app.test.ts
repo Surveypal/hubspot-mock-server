@@ -63,7 +63,6 @@ describe("app tests", () => {
     expect(createResponse2).toBeDefined()
 
     const response = await hubspotClient.crm.companies.basicApi.getPage();
-    console.log(response)
     expect(response).toBeDefined()
     expect(response.results).toHaveLength(2)
 
@@ -114,6 +113,47 @@ describe("app tests", () => {
       }
     })
     expect(createResponse1.id).not.toBe(createResponse2.id)
+  });
+
+  test("Create company/contact association", async () => {
+    const createCompanyResponse = await hubspotClient.crm.companies.basicApi.create({
+      properties: {
+        name: "Test company 1"
+      }
+    })
+    const createContactResponse = await hubspotClient.crm.contacts.basicApi.create({
+      properties: {
+        firstname: "Teppo",
+        lastname: "Testaaja",
+        email: "teppo@testaaja.fi",
+      }
+    })
+
+    const associationResponse = await hubspotClient.crm.contacts.associationsApi.create(
+      parseInt(createContactResponse.id),
+      "company",
+      parseInt(createCompanyResponse.id),
+      [
+        {
+          associationCategory: "HUBSPOT_DEFINED",
+          associationTypeId: 1,
+        }
+      ]
+    )
+    expect(associationResponse).toBeDefined()
+    expect(associationResponse.fromObjectTypeId).toBe("contacts")
+    expect(associationResponse.fromObjectId).toBe(createContactResponse.id)
+    expect(associationResponse.toObjectTypeId).toBe("company")
+    expect(associationResponse.toObjectId).toBe(createCompanyResponse.id)
+
+    const getResponse = await hubspotClient.crm.contacts.associationsApi.getAll(parseInt(createContactResponse.id), "company")
+    expect(getResponse.results).toBeDefined()
+    expect(getResponse.results).toHaveLength(1)
+    const association = getResponse.results[0]
+    expect(association.toObjectId).toBe(createCompanyResponse.id)
+    expect(association.associationTypes).toHaveLength(1)
+    expect(association.associationTypes[0].category).toBe("HUBSPOT_DEFINED")
+    expect(association.associationTypes[0].typeId).toBe(1)
   });
 
 /*

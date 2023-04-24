@@ -7,6 +7,21 @@ import pluralize from "pluralize"
 
 import config from "./config"
 
+interface AssociationType {
+  readonly associationCategory: string
+  readonly associationTypeId: number
+}
+
+class Association {
+  readonly toObjectId: number
+  readonly associationTypes: AssociationType[]
+
+  constructor(toObjectId: number, associationTypes: AssociationType[]) {
+    this.toObjectId = toObjectId
+    this.associationTypes = associationTypes
+  }
+}
+
 const app: Express = express()
 
 app.use(bodyParser.json())
@@ -73,12 +88,12 @@ app.get("/crm/v3/objects/:resource", async (req, res) => {
   const resource = data[req.params.resource as DataKey]
   const response = {
     results: [...resource.set.values()],
-  };
+  }
 
   res.type("json")
   res.status(200)
   res.send(response)
-});
+})
 
 app.post("/crm/v3/objects/:resource", async (req, res) => {
   const id = newId(req.params.resource)
@@ -113,7 +128,7 @@ app.get("/crm/v3/objects/:resource/:resource_id", async (req, res) => {
     res.type("json")
     res.status(200)
     res.send(data[req.params.resource as DataKey].set.get(parseInt(req.params.resource_id)))
-    }
+  }
 })
 
 app.patch("/crm/v3/objects/:resource/:resource_id", async (req, res) => {
@@ -143,13 +158,21 @@ app.patch("/crm/v3/objects/:resource/:resource_id", async (req, res) => {
   res.send(data[req.params.resource as DataKey].set.get(parseInt(req.params.resource_id)))
 })
 
-app.get("/crm/v3/objects/:resource/:resource_id/associations/:to_object_type", async (req, res) => {
-  const related: number[] =
+app.get("/crm/v4/objects/:resource/:resource_id/associations/:to_object_type", async (req, res) => {
+  const related: Association[] =
     data[req.params.resource as DataKey].set.get(parseInt(req.params.resource_id))[
-      req.params.to_object_type
+      pluralize(req.params.to_object_type)
     ] ?? []
   const results = related.map((elem) => {
-    return data[pluralize(req.params.to_object_type) as DataKey].set.get(elem)
+    return {
+      toObjectId: elem.toObjectId,
+      associationTypes: elem.associationTypes.map((associationType) => {
+        return {
+          category: associationType.associationCategory,
+          typeId: associationType.associationTypeId,
+        }
+      }),
+    }
   })
   res.type("json")
   res.status(200)
@@ -159,22 +182,26 @@ app.get("/crm/v3/objects/:resource/:resource_id/associations/:to_object_type", a
 })
 
 app.put(
-  "/crm/v3/objects/:resource/:resource_id/associations/:to_object_type/:object_id/:association_type",
+  "/crm/v4/objects/:resource/:resource_id/associations/:to_object_type/:object_id",
   async (req, res) => {
-    if (
-      data[req.params.resource as DataKey].set.get(parseInt(req.params.resource_id))[
-        req.params.to_object_type
-      ] !== undefined
-    ) {
-      data[req.params.resource as DataKey].set.get(parseInt(req.params.resource_id))[
-        req.params.to_object_type
-      ] = []
+    const associationSpecs = req.body
+    const entity = data[req.params.resource as DataKey].set.get(parseInt(req.params.resource_id))
+    const key = pluralize(req.params.to_object_type)
+    if (entity[key] === undefined) {
+      entity[key] = []
     }
-    data[req.params.resource as DataKey].set
-      .get(parseInt(req.params.resource_id))
-      [req.params.to_object_type].push(parseInt(req.params.object_id))
-    res.status(200)
-    res.send("done")
+    entity[key].push(new Association(parseInt(req.params.object_id), associationSpecs))
+    data[req.params.resource as DataKey].set.set(parseInt(req.params.resource_id), entity)
+
+    res.type("json")
+    res.status(201)
+    res.send({
+      fromObjectTypeId: req.params.resource,
+      fromObjectId: parseInt(req.params.resource_id),
+      toObjectTypeId: req.params.to_object_type,
+      toObjectId: parseInt(req.params.object_id),
+      labels: [],
+    })
   }
 )
 
