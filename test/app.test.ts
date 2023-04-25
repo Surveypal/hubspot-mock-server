@@ -144,9 +144,9 @@ describe("app tests", () => {
     )
     expect(associationResponse).toBeDefined()
     expect(associationResponse.fromObjectTypeId).toBe("contacts")
-    expect(associationResponse.fromObjectId).toBe(createContactResponse.id)
+    expect(associationResponse.fromObjectId).toBe(parseInt(createContactResponse.id))
     expect(associationResponse.toObjectTypeId).toBe("company")
-    expect(associationResponse.toObjectId).toBe(createCompanyResponse.id)
+    expect(associationResponse.toObjectId).toBe(parseInt(createCompanyResponse.id))
 
     const getResponse = await hubspotClient.crm.contacts.associationsApi.getAll(
       parseInt(createContactResponse.id),
@@ -155,7 +155,7 @@ describe("app tests", () => {
     expect(getResponse.results).toBeDefined()
     expect(getResponse.results).toHaveLength(1)
     const association = getResponse.results[0]
-    expect(association.toObjectId).toBe(createCompanyResponse.id)
+    expect(association.toObjectId).toBe(parseInt(createCompanyResponse.id))
     expect(association.associationTypes).toHaveLength(1)
     expect(association.associationTypes[0].category).toBe("HUBSPOT_DEFINED")
     expect(association.associationTypes[0].typeId).toBe(1)
@@ -170,7 +170,7 @@ describe("app tests", () => {
     expect(getContactResponse.associations).toBeDefined()
     expect(getContactResponse.associations?.companies).toBeDefined()
     expect(getContactResponse.associations?.companies?.results).toHaveLength(1)
-    expect(getContactResponse.associations?.companies?.results[0].id).toBe(createCompanyResponse.id)
+    expect(getContactResponse.associations?.companies?.results[0].id).toBe(parseInt(createCompanyResponse.id))
   })
 
   test("Updating company", async () => {

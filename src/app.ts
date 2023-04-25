@@ -80,10 +80,10 @@ const data = {
 type DataKey = keyof typeof data
 
 const newIds = {
-  contacts: 1,
-  companies: 1,
-  deals: 1,
-  tickets: 1,
+  contacts: 10000000,
+  companies: 10000000,
+  deals: 10000000,
+  tickets: 10000000,
 }
 
 type KeyKey = keyof typeof newIds
@@ -122,7 +122,7 @@ app.post("/crm/v3/objects/:resource", async (req, res) => {
   res.type("json")
   const ts = moment().format("YYYY-MM-DDTHH:mm:ss.SSS") + "Z"
   const resource = {
-    id,
+    id: id.toString(),
     createdAt: ts,
     updatedAt: ts,
     archived: false,
