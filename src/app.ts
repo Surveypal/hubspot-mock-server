@@ -106,16 +106,29 @@ const getResourceName = (resources: string): string => {
   throw new Error("NotImplemented")
 }
 
-app.get("/crm/v3/objects/:resource", async (req, res) => {
-  const resource = data[req.params.resource as DataKey]
-  const response = {
-    results: [...resource.set.values()],
-  }
+app.get(
+  "/crm/v3/objects/:resource",
+  async (
+    req: Request<
+      { resource: string },
+      unknown,
+      unknown,
+      { archived?: boolean }
+    >,
+    res
+  ) => {
+    const archived = req.query.archived ?? false
+    const resource = data[req.params.resource as DataKey]
+    const list = [...resource.set.values()]
+    const response = {
+      results: list.filter(item => !!(item.archived as boolean) === !!archived),
+    }
 
-  res.type("json")
-  res.status(200)
-  res.send(response)
-})
+    res.type("json")
+    res.status(200)
+    res.send(response)
+  }
+)
 
 app.post("/crm/v3/objects/:resource", async (req, res) => {
   const id = newId(req.params.resource)
@@ -148,33 +161,39 @@ app.get(
       { resource: string; resource_id: string },
       unknown,
       unknown,
-      { associations?: string }
+      { associations?: string; archived?: boolean }
     >,
     res
   ) => {
     const associations = req.query.associations
+    const archived = req.query.archived ?? false
     if (!data[req.params.resource as DataKey].set.has(parseInt(req.params.resource_id))) {
       res.type("html")
       res.status(404)
       res.send()
     } else {
       const result = data[req.params.resource as DataKey].set.get(parseInt(req.params.resource_id))
+      // https://stackoverflow.com/a/68818811
+      if (!!(result.archived as boolean) !== !!archived) {
+        res.type("html")
+        res.status(404)
+        res.send()
+        return
+      }
       if (associations !== undefined) {
         for (const association of associations.split(",")) {
-          console.log(association)
-
           const related: Association[] = result[pluralize(association)] ?? []
           if (related.length > 0) {
             if (result.associations === undefined) {
               result.associations = {}
             }
             result.associations[pluralize(association)] = {
-              results: related.map(item => {
+              results: related.map((item) => {
                 return {
                   id: item.toObjectId,
                   type: item.associationTypes[0].associationCategory,
                 }
-              })
+              }),
             }
           }
         }
@@ -212,6 +231,13 @@ app.patch("/crm/v3/objects/:resource/:resource_id", async (req, res) => {
   res.type("json")
   res.status(200)
   res.send(data[req.params.resource as DataKey].set.get(parseInt(req.params.resource_id)))
+})
+
+app.delete("/crm/v3/objects/:resource/:resource_id", async (req, res) => {
+  data[req.params.resource as DataKey].set.get(parseInt(req.params.resource_id)).archived = true
+
+  res.status(204)
+  res.send()
 })
 
 app.get("/crm/v4/objects/:resource/:resource_id/associations/:to_object_type", async (req, res) => {

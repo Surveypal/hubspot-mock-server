@@ -103,6 +103,36 @@ describe("app tests", () => {
     ).rejects.toThrow()
   })
 
+  test("Archiving company", async () => {
+    const name = "Test company 1"
+
+    const createResponse = await hubspotClient.crm.companies.basicApi.create({
+      properties: {
+        name,
+      },
+    })
+    expect(createResponse).toBeDefined()
+    expect(createResponse.id).toBeDefined()
+    expect(createResponse.properties.name).toBe(name)
+    expect(createResponse.createdAt).toBeDefined()
+    expect(createResponse.updatedAt).toBeDefined()
+    expect(createResponse.archived).toBe(false)
+
+    await hubspotClient.crm.companies.basicApi.archive(createResponse.id)
+
+    const getResponse = await hubspotClient.crm.companies.basicApi.getById(createResponse.id, undefined, undefined, undefined, true)
+    expect(getResponse).toBeDefined()
+    expect(getResponse.id).toBeDefined()
+    expect(getResponse.properties.name).toBe(name)
+    expect(getResponse.createdAt).toBeDefined()
+    expect(getResponse.updatedAt).toBeDefined()
+    expect(getResponse.archived).toBe(true)
+
+    // Check that archived company does not appear in list when non-archived are requested
+    const response = await hubspotClient.crm.companies.basicApi.getPage()
+    expect(response.results).toStrictEqual([])
+  })
+
   test("Creating multiple companies assigns different ids to them", async () => {
     const createResponse1 = await hubspotClient.crm.companies.basicApi.create({
       properties: {
