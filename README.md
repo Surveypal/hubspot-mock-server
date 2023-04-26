@@ -7,10 +7,10 @@ to a real Hubspot instance. Originally inspired by https://github.com/giannifior
 Coverage is currently poor, but it's easy to extend depending on which endpoint you plan to use. Implemented actions are:
 
 CRUD operations over basic resources:
-* Creating, Updating, Getting, Listing companies in the connected Hubspot account
-* Creating, Updating, Getting, Listing contacts in the connected Hubspot account
-* Creating, Updating, Getting, Listing deals in the connected Hubspot account
-* Creating, Updating, Getting, Listing tickets in the connected Hubspot account
+* Creating, Updating, Getting, Listing, Archiving companies in the connected Hubspot account
+* Creating, Updating, Getting, Listing, Archiving contacts in the connected Hubspot account
+* Creating, Updating, Getting, Listing, Archiving deals in the connected Hubspot account
+* Creating, Updating, Getting, Listing, Archiving tickets in the connected Hubspot account
 
 Actions to associate resources each to the other:
 * Associating a Contact with a Company
