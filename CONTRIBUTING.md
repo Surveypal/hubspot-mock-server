@@ -22,7 +22,7 @@ Explain the problem you’re facing and include as many details as you can to he
 
 * **Provide all the specific information that might be needed to reproduce the problem**
 
-    * Explain why **what you encountered is a bug** / how your enhancement would **improve MJML**: what did you expect to see and why?
+    * Explain why **what you encountered is a bug** / how your enhancement would **improve this mock server**: what did you expect to see and why?
 
 ## Template For Submitting Bug Reports
 
