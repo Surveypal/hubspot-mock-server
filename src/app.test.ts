@@ -4,7 +4,7 @@ import type { Server } from "http"
 import type { AddressInfo } from "net"
 import { Client } from "@hubspot/api-client"
 
-import app from "../src/app"
+import app from "./app"
 
 describe("app tests", () => {
   let server: Server
