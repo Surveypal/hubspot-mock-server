@@ -3,6 +3,7 @@ import bodyParser from "body-parser"
 import express from "express"
 import type { Express, Request } from "express"
 import moment from "moment"
+import morgan from "morgan"
 import pluralize from "pluralize"
 
 import config from "./config"
@@ -38,6 +39,7 @@ interface Filters {
 
 const app: Express = express()
 
+app.use(morgan("combined"))
 app.use(bodyParser.json())
 
 const webhook = {
