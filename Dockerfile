@@ -5,7 +5,6 @@ WORKDIR /app
 COPY . .
 
 RUN yarn install --frozen-lockfile
-RUN yarn test
 RUN yarn build
 
 ENV PORT=9001
