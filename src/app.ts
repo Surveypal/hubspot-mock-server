@@ -360,6 +360,60 @@ app.get("/oauth/v1/access-tokens/:token", (req, res) => {
   })
 })
 
+app.post("/submissions/v3/integration/secure/submit/:portal_id/:form_guid", (req, res) => {
+  const body = req.body;
+
+  let email = "";
+  let firstName = "";
+  let lastName = "";
+
+  body.fields.forEach((field: any) => {
+    if (field.name === "email") {
+      email = field.value;
+    }
+    if (field.name === "firstname") {
+      firstName = field.value;
+    }
+    if (field.name === "lastname") {
+      lastName = field.value;
+    }
+  });
+
+  const ts = moment().format("YYYY-MM-DDTHH:mm:ss.SSS") + "Z"
+  let processed = false;
+
+  for (const contact of data.contacts.set.values()) {
+    if (contact.properties.email === email) {
+      contact.properties.firstname = firstName;
+      contact.properties.lastname = lastName;
+      contact.updatedAt = ts;
+      processed = true;
+    }
+  }
+
+  if (!processed) {
+    const id = newId("contacts")
+    data.contacts.set.set(id, {
+      id: id.toString(),
+      createdAt: ts,
+      updatedAt: ts,
+      archived: false,
+      properties: {
+        email,
+        firstname: firstName,
+        lastname: lastName,
+      },
+    })
+    data.contacts.list.push(id)
+  }
+
+  res.type("json")
+  res.status(200)
+  res.send({
+    inlineMessage: "Form submitted"
+  })
+})
+
 app.get("/ping", (req, res) => {
   res.status(200)
   res.send("pong")

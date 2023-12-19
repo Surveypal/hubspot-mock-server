@@ -291,6 +291,106 @@ describe("app tests", () => {
     expect(response.results[0].properties.name).toBe(name)
   })
 
+  test("Form submission creates new contact", async () => {
+    const data = {
+      fields: [
+          {
+              name: "email",
+              value: "teppo@tester.com",
+          },
+          {
+              name: "firstname",
+              value: "Teppo",
+          },
+          {
+              name: "lastname",
+              value: "the Tester",
+          },
+      ],
+  };
+
+  const response = await axios.post(
+      `${baseUrl}/submissions/v3/integration/secure/submit/1234/5678`,
+      data,
+      {
+          headers: {
+              Authorization: "Bearer accessToken",
+              "Content-Type": "application/json",
+          },
+      }
+  );
+  expect(response.status).toBe(200)
+
+  const filters = {
+    filterGroups: [
+      {
+        filters: [
+          {
+            propertyName: "email",
+            operator: "EQ",
+            value: "teppo@tester.com",
+          },
+        ],
+      },
+    ],
+  }
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
+  // @ts-ignore
+  const searchResponse = await hubspotClient.crm.contacts.searchApi.doSearch(filters)
+  expect(searchResponse.total).toBe(1)
+  expect(searchResponse.results).toHaveLength(1)
+  expect(searchResponse.results[0].properties.email).toBe("teppo@tester.com")
+  expect(searchResponse.results[0].properties.firstname).toBe("Teppo")
+  expect(searchResponse.results[0].properties.lastname).toBe("the Tester")
+})
+
+test("Form submission updates existing contact", async () => {
+  const createResponse = await hubspotClient.crm.contacts.basicApi.create({
+    properties: {
+      email: "teppo@tester.com",
+      firstname: "Placeholder",
+      lastname: "Placeholder",
+    },
+  })
+  expect(createResponse).toBeDefined()
+  expect(createResponse.id).toBeDefined()
+
+  const data = {
+    fields: [
+        {
+            name: "email",
+            value: "teppo@tester.com",
+        },
+        {
+            name: "firstname",
+            value: "Teppo",
+        },
+        {
+            name: "lastname",
+            value: "the Tester",
+        },
+    ],
+  };
+
+  const response = await axios.post(
+      `${baseUrl}/submissions/v3/integration/secure/submit/1234/5678`,
+      data,
+      {
+          headers: {
+              Authorization: "Bearer accessToken",
+              "Content-Type": "application/json",
+          },
+      }
+  );
+  expect(response.status).toBe(200)
+
+  const getResponse = await hubspotClient.crm.contacts.basicApi.getById(createResponse.id)
+  expect(getResponse).toBeDefined()
+  expect(getResponse.id).toBeDefined()
+  expect(getResponse.properties.firstname).toBe("Teppo")
+  expect(getResponse.properties.lastname).toBe("the Tester")
+})
+
   /*
   test("Real hubspot", async () => {
     const realClient = new Client({ accessToken: process.env.HUBSPOT_API_KEY });
